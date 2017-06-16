@@ -24,11 +24,16 @@ package com.raywenderlich.cheesefinder;
 
 import android.view.View;
 
+import java.util.List;
+
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Cancellable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 public class CheeseActivity extends BaseSearchActivity {
 
@@ -65,13 +70,26 @@ public class CheeseActivity extends BaseSearchActivity {
         Observable<String> searchTextObservable = createButtonClickObservable();
 
         // subscribe to the observable with a simple consumer
-        searchTextObservable.subscribe(new Consumer<String>() {
-            // accept() will be called when the observable emits an item
-            @Override
-            public void accept(String query) throws Exception {
-                // perform search and show the results
-                showResult(mCheeseSearchEngine.search(query));
-            }
-        });
+        searchTextObservable
+                // anything after this will be called on the IO thread
+                .observeOn(Schedulers.io())
+                // for each query, return a list of results
+                .map(new Function<String, List<String>>() {
+                    @Override
+                    public List<String> apply(String query) throws Exception {
+                        return mCheeseSearchEngine.search(query);
+                    }
+                })
+                // anything after this will be called on the UI thread
+                .observeOn(AndroidSchedulers.mainThread())
+                // since our showResult() call there updates the UI, it has to be on the UI thread
+                .subscribe(new Consumer<List<String>>() {
+                    // accept() will be called when the observable emits an item
+                    @Override
+                    public void accept(List<String> result) throws Exception {
+                        // perform search and show the results
+                        showResult(result);
+                    }
+                });
     }
 }
