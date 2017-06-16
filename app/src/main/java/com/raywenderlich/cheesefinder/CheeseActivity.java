@@ -71,7 +71,16 @@ public class CheeseActivity extends BaseSearchActivity {
 
         // subscribe to the observable with a simple consumer
         searchTextObservable
-                // anything after this will be called on the IO thread
+                // start on UI thread for progress bar
+                .observeOn(AndroidSchedulers.mainThread())
+                // doOnNext() is called every time an item is emitted by an observable
+                .doOnNext(new Consumer<String>() {
+                    @Override
+                    public void accept(String s) throws Exception {
+                        showProgressBar();
+                    }
+                })
+                // switch to IO thread
                 .observeOn(Schedulers.io())
                 // for each query, return a list of results
                 .map(new Function<String, List<String>>() {
@@ -88,6 +97,7 @@ public class CheeseActivity extends BaseSearchActivity {
                     @Override
                     public void accept(List<String> result) throws Exception {
                         // perform search and show the results
+                        hideProgressBar();
                         showResult(result);
                     }
                 });
