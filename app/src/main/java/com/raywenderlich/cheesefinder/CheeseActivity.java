@@ -22,6 +22,8 @@
 
 package com.raywenderlich.cheesefinder;
 
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 
 import java.util.List;
@@ -67,7 +69,7 @@ public class CheeseActivity extends BaseSearchActivity {
         super.onStart();
 
         // creates the observable
-        Observable<String> searchTextObservable = createButtonClickObservable();
+        Observable<String> searchTextObservable = createTextChangeObservable();
 
         // subscribe to the observable with a simple consumer
         searchTextObservable
@@ -101,5 +103,44 @@ public class CheeseActivity extends BaseSearchActivity {
                         showResult(result);
                     }
                 });
+    }
+
+    private Observable<String> createTextChangeObservable() {
+        // create an observable
+        Observable<String> textChangeObservable = Observable.create(new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(final ObservableEmitter<String> emitter) throws Exception {
+                // when an observer subscribes, make a TextWatcher
+                final TextWatcher watcher = new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                    }
+
+                    // when the text changes, emit the new sequence
+                    @Override
+                    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                        emitter.onNext(charSequence.toString());
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable editable) {
+
+                    }
+                };
+
+                // add the watcher to the query text view
+                mQueryEditText.addTextChangedListener(watcher);
+
+                // make sure we don't keep any references
+                emitter.setCancellable(new Cancellable() {
+                    @Override
+                    public void cancel() throws Exception {
+                        mQueryEditText.removeTextChangedListener(watcher);
+                    }
+                });
+            }
+        });
+        return textChangeObservable;
     }
 }
