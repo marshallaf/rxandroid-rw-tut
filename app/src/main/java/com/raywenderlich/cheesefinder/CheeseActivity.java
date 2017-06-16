@@ -22,6 +22,56 @@
 
 package com.raywenderlich.cheesefinder;
 
+import android.view.View;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Cancellable;
+import io.reactivex.functions.Consumer;
+
 public class CheeseActivity extends BaseSearchActivity {
 
+    // returns an observable that emits strings
+    private Observable<String> createButtonClickObservable() {
+        // create and return a new Observable
+        return Observable.create(new ObservableOnSubscribe<String>() {
+            // this defines what happens when it is subscribed to
+            @Override
+            public void subscribe(final ObservableEmitter<String> emitter) throws Exception {
+                // when the click event happens, call onNext on the emitter
+                mSearchButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        emitter.onNext(mQueryEditText.getText().toString());
+                    }
+                });
+
+                // this prevents memory leak by removing the reference to the listener
+                emitter.setCancellable(new Cancellable() {
+                    @Override
+                    public void cancel() throws Exception {
+                        mSearchButton.setOnClickListener(null);
+                    }
+                });
+            }
+        });
+    }
+
+    protected void onStart() {
+        super.onStart();
+
+        // creates the observable
+        Observable<String> searchTextObservable = createButtonClickObservable();
+
+        // subscribe to the observable with a simple consumer
+        searchTextObservable.subscribe(new Consumer<String>() {
+            // accept() will be called when the observable emits an item
+            @Override
+            public void accept(String query) throws Exception {
+                // perform search and show the results
+                showResult(mCheeseSearchEngine.search(query));
+            }
+        });
+    }
 }
