@@ -35,6 +35,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Cancellable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 public class CheeseActivity extends BaseSearchActivity {
@@ -141,6 +142,12 @@ public class CheeseActivity extends BaseSearchActivity {
                 });
             }
         });
-        return textChangeObservable;
+        // return the observable, with a filter such that queries of size == 1 don't get propagated further
+        return textChangeObservable.filter(new Predicate<String>() {
+            @Override
+            public boolean test(String s) throws Exception {
+                return s.length() >= 2;
+            }
+        });
     }
 }
