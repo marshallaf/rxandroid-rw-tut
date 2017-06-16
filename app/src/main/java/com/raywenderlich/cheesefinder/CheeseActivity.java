@@ -71,7 +71,11 @@ public class CheeseActivity extends BaseSearchActivity {
         super.onStart();
 
         // creates the observable
-        Observable<String> searchTextObservable = createTextChangeObservable();
+        Observable<String> textChangeStream = createTextChangeObservable();
+        Observable<String> buttonClickStream = createButtonClickObservable();
+
+        // merge the two observables so you can react to both in the same way
+        Observable<String> searchTextObservable = Observable.merge(textChangeStream, buttonClickStream);
 
         // subscribe to the observable with a simple consumer
         searchTextObservable
